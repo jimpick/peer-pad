@@ -27,9 +27,9 @@ process.once('uncaughtException', (err) => {
 })
 
 ;(async () => {
-  console.log('Building...')
-  await build()
-  console.log('Built.')
+  // console.log('Building...')
+  // await build()
+  // console.log('Built.')
 
   console.log('Spawning relay...')
   relay = await spawnRelay()
@@ -40,7 +40,7 @@ process.once('uncaughtException', (err) => {
   console.log('Spawned server.')
 
   cluster = await spawnCluster({
-    replicaCount: 4,
+    replicaCount: 2,
     spawnPinner: true
   })
 
@@ -56,8 +56,13 @@ process.once('uncaughtException', (err) => {
     console.log('ended')
     await cluster.idle()
     await delay(1000)
+    console.log('Jim1')
     relay.kill()
     server.kill()
     cluster.close()
+    console.log('Jim2')
+    await delay(1000)
+    console.log('Jim3')
+    process.exit(0)
   })
 })()
