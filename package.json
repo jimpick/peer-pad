@@ -15,7 +15,8 @@
     "serve:build": "http-server -p 1337 build",
     "deploy:ipfs": "ipfs add -r build/",
     "start:rendezvous": "rendezvous",
-    "start:test:pinner": "pinner peer-pad/2 /dns4/127.0.0.1/tcp/9090/ws/p2p-websocket-star"
+    "start:test:pinner": "pinner peer-pad/2 /dns4/127.0.0.1/tcp/9090/ws/p2p-websocket-star",
+    "start:staging:pinner": "pinner peer-pad-jim-staging /dns4/rendezvous.jimpick.com/tcp/9093/wss/p2p-websocket-star"
   },
   "dependencies": {
     "autoprefixer": "7.1.2",
@@ -51,7 +52,7 @@
     "lodash.debounce": "^4.0.8",
     "milliseconds": "^1.0.3",
     "object-assign": "4.1.1",
-    "peer-star-app": "^0.9.1",
+    "@jimpick/peer-star-app-staging": "^0.9.2-1",
     "pify": "^3.0.0",
     "postcss-css-variables": "^0.8.0",
     "postcss-flexbugs-fixes": "3.2.0",
