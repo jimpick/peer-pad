@@ -40,7 +40,7 @@ process.once('uncaughtException', (err) => {
   console.log('Spawned server.')
 
   cluster = await spawnCluster({
-    replicaCount: 2,
+    replicaCount: 6,
     spawnPinner: true
   })
 

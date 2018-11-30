@@ -1,4 +1,4 @@
 #! /bin/bash
 
-killall node
+killall node || true
 rm -f ~/.jsipfs/repo.lock ~/.jsipfs/datastore/LOCK
