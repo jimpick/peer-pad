@@ -30,6 +30,49 @@ If you find any issues, please report them via GitHub here:
 https://github.com/ipfs-shipyard/peer-pad/issues/new
 `
 
+// Status messages for the user to know what's going on
+const stateStatuses = {
+  IDLE: 'IDLE',
+  NEEDS_SAVING: 'Needs saving...',
+  WILL_SAVE: 'Will save soon...',
+  SAVING: 'Saving...',
+  SAVED: 'Saved!',
+  TIMEOUT: 'Save timed out (NOT saved)',
+  RECEIVING: 'Receiving data'
+}
+
+// How long time in MS we should wait before assuming the pinner timed out
+const SAVE_TIMEOUT_MS = 1000 * 10
+
+const stateColors = {
+  [stateStatuses.NEEDS_SAVING]: '#e67e22',
+  [stateStatuses.WILL_SAVE]: '#e67e22',
+  [stateStatuses.SAVING]: '#e67e22',
+  [stateStatuses.SAVED]: '#2ecc71',
+  [stateStatuses.TIMEOUT]: '#e74c3c',
+  [stateStatuses.RECEIVING]: '#3498db'
+}
+
+const StatusIcon = ({stateStatus}) => {
+  const size = '10px'
+  return <div style={{
+    display: 'inline-block',
+    height: size,
+    width: size,
+    lineHeight: size,
+    borderRadius: size,
+    backgroundColor: stateColors[stateStatus],
+    border: '1px solid rgba(0,0,0,0.2)'
+  }} />
+}
+
+const SavedStatus = ({stateStatus}) => {
+  if (stateStatus === stateStatuses.IDLE) {
+    return <div />
+  }
+  return <div><StatusIcon stateStatus={stateStatus} /> {stateStatus}</div>
+}
+
 class Edit extends Component {
   constructor (props) {
     super(props)
@@ -49,7 +92,8 @@ class Edit extends Component {
       snapshots: [],
       alias: window.localStorage.getItem('alias'),
       doc: null,
-      isDebuggingEnabled: !!window.localStorage.getItem('debug')
+      isDebuggingEnabled: !!window.localStorage.getItem('debug'),
+      stateStatus: stateStatuses.IDLE
     }
 
     this.onViewModeChange = this.onViewModeChange.bind(this)
@@ -80,7 +124,7 @@ class Edit extends Component {
 
     // Bind new editor if not null and we have a document
     if (doc && nextEditor) {
-      this._editorBinding = bindEditor(doc, this._titleRef, nextEditor, this.state.type)
+      this.maybeActivateEditor()
     }
   }
 
@@ -96,7 +140,7 @@ class Edit extends Component {
         docScript,
         DocViewer
       }
-      const keys = (await import('peer-star-app')).keys
+      const keys = (await import('peer-base')).keys
       const snapshot = await takeSnapshot(keys, this.state.doc, options)
       snapshot.createdAt = new Date().toISOString()
       this.setState(({ snapshots }) => ({ snapshots: [snapshot, ...snapshots] }))
@@ -155,14 +199,14 @@ class Edit extends Component {
   }
 
   async onDebuggingStart () {
-    (await import('peer-star-app')).debug.enable(debugScope)
+    (await import('peer-base')).debug.enable(debugScope)
     window.localStorage.setItem('debug', debugScope)
     console.log('debugging started')
     this.setState({isDebuggingEnabled: true})
   }
 
   async onDebuggingStop () {
-    (await import('peer-star-app')).debug.disable()
+    (await import('peer-base')).debug.disable()
     window.localStorage.setItem('debug', '')
     console.log('debugging stopped')
     this.setState({isDebuggingEnabled: false})
@@ -233,6 +277,7 @@ class Edit extends Component {
                 <div className='dn f7 pigeon-post'>
                   <b className='fw5'>Last change:</b> today, 12:00AM
                 </div>
+                <SavedStatus stateStatus={this.state.stateStatus} />
               </div>
             </div>
             <EditorArea
@@ -256,16 +301,8 @@ class Edit extends Component {
     )
   }
 
-  componentDidUpdate () {
-    // Force codemirror to update to help avoid render / write order issues
-    if (this._editor && this._editor.refresh) {
-      this._editor.refresh()
-      this._editor.setOption('readOnly', !this.state.canEdit)
-    }
-  }
-
   async componentDidMount () {
-    const PeerStar = await import('peer-star-app')
+    const PeerStar = await import('peer-base')
 
     if (!this._backend) {
       const peerStarConfig = window.__peerStarConfig ? window.__peerStarConfig : config.peerStar
@@ -288,6 +325,38 @@ class Edit extends Component {
         keys
         // maxDeltaRetention: 0
       })
+
+    let timeoutID = null
+    doc.on('state changed', (fromSelf) => {
+      if (fromSelf) {
+        if (doc.replication.pinnerPeers().size) {
+          if (doc.replication.isCurrentStatePersistedOnPinner()) {
+            this.setState({stateStatus: stateStatuses.SAVED})
+          } else {
+            this.setState({stateStatus: stateStatuses.WILL_SAVE})
+          }
+        } else {
+          this.setState({stateStatus: stateStatuses.NEEDS_SAVING})
+        }
+      }
+    })
+
+    doc.replication.on('pinning', () => {
+      this.setState({stateStatus: stateStatuses.SAVING})
+      clearTimeout(timeoutID)
+      timeoutID = setTimeout(() => {
+        this.setState({stateStatus: stateStatuses.TIMEOUT})
+      }, SAVE_TIMEOUT_MS)
+    })
+
+    doc.replication.on('receiving', () => {
+      this.setState({stateStatus: stateStatuses.RECEIVING})
+    })
+
+    doc.replication.on('pinned', () => {
+      clearTimeout(timeoutID)
+      this.setState({stateStatus: stateStatuses.SAVED})
+    })
 
     this.setState({ doc })
 
@@ -333,6 +402,10 @@ class Edit extends Component {
   maybeActivateEditor () {
     if (!this._editorBinding && this._editor) {
       this._editorBinding = bindEditor(this.state.doc, this._titleRef, this._editor, this.state.type)
+      if (this.state.canEdit) {
+        this._editor.setOption('readOnly', false)
+      }
+      this._editor.refresh()
     }
 
     // if (this._editor && this.state.canEdit) {
