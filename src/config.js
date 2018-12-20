@@ -4,8 +4,8 @@ const isDev = NODE_ENV === 'development'
 
 const defaultSwarmAddresses = {
   development: '/ip4/0.0.0.0/tcp/9090/ws/p2p-websocket-star',
-  production: '/dns4/ws-star1.par.dwebops.pub/tcp/443/wss/p2p-websocket-star',
-  staging: ['/dns4/rendezvous.jimpick.com/tcp/9091/wss/p2p-websocket-star']
+  // production: '/dns4/ws-star1.par.dwebops.pub/tcp/443/wss/p2p-websocket-star',
+  production: '/dns4/rendezvous.jimpick.com/tcp/9091/wss/p2p-websocket-star'
 }
 
 const swarmAddress = defaultSwarmAddresses[NODE_ENV]
