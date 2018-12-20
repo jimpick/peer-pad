@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 
+import speedometer from 'speedometer'
+
 import config from '../config'
 import { convert as convertMarkdown } from '../lib/markdown'
 import bindEditor from '../lib/bind-editor'
@@ -95,6 +97,11 @@ class Edit extends Component {
       isDebuggingEnabled: !!window.localStorage.getItem('debug'),
       stateStatus: stateStatuses.IDLE
     }
+
+    this.inboundSpeed = speedometer()
+    setInterval(() => {
+      this.setState({inboundSpeed: this.inboundSpeed().toFixed(1)})
+    }, 1000)
 
     this.onViewModeChange = this.onViewModeChange.bind(this)
     this.onEditor = this.onEditor.bind(this)
@@ -225,7 +232,8 @@ class Edit extends Component {
       viewMode,
       snapshots,
       alias,
-      isDebuggingEnabled
+      isDebuggingEnabled,
+      inboundSpeed
     } = this.state
 
     const {
@@ -251,6 +259,9 @@ class Edit extends Component {
           <div>
             <span className='mr2'>
               <NewButton />
+            </span>
+            <span className='mr2' style={{color: 'yellow'}}>
+              In/s: {inboundSpeed || '0'}
             </span>
             <span className='mr0'>
               <PeersButton doc={this.state.doc} alias={alias} onAliasChange={this.onAliasChange} canEdit={this.state.canEdit} />
@@ -356,6 +367,10 @@ class Edit extends Component {
     doc.replication.on('pinned', () => {
       clearTimeout(timeoutID)
       this.setState({stateStatus: stateStatuses.SAVED})
+    })
+
+    doc._membership.connectionManager._protocol.on('inbound message', msg => {
+      this.inboundSpeed(1) // One message
     })
 
     this.setState({ doc })
