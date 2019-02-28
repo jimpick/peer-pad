@@ -16,7 +16,7 @@
     "serve:build": "http-server -p 1337 build",
     "deploy:ipfs": "ipfs add -r build/",
     "start:rendezvous": "rendezvous",
-    "start:test:pinner": "PEER_STAR_SWARM_ADDRESS=/dns4/127.0.0.1/tcp/9090/ws/p2p-websocket-star PEER_STAR_APP_NAME=peer-pad/2 pinner"
+    "start:test:pinner": "PEER_STAR_SWARM_ADDRESS=/dns4/rendezvous.jimpick.com/tcp/9093/wss/p2p-websocket-star PEER_STAR_APP_NAME=peer-pad/2 pinner"
   },
   "bin": {
     "peerpad-print-dump": "bin/peerpad-print-dump"
@@ -68,7 +68,7 @@
     "object-assign": "4.1.1",
     "optimize-css-assets-webpack-plugin": "5.0.1",
     "p-event": "^2.2.0",
-    "peer-base": "^0.12.0-rc5",
+    "peer-base": "^0.12.0-rc6",
     "pify": "^4.0.1",
     "pnp-webpack-plugin": "1.1.0",
     "postcss-css-variables": "^0.8.0",
